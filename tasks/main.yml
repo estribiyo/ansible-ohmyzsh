@@ -1,0 +1,56 @@
+# https://gist.github.com/kernelsndrs/5441c20d819cd58cfd7b1fa1268a24a7
+- name: Install oh my zsh
+  git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: /etc/oh-my-zsh
+    depth: 1
+  
+- name: Install Powerlevel10K
+  git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: /etc/oh-my-zsh/custom/themes/powerlevel10k
+    depth: 1
+  
+- name: Install zsh-syntax-highlighting
+  git:
+    repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+    dest: /etc/oh-my-zsh/plugins/zsh-syntax-highlighting
+    depth: 1
+  
+- name: Install zsh-autosuggestions
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dest: /etc/oh-my-zsh/plugins/zsh-autosuggestions
+    depth: 1
+  
+- name: Copy default zsh rc file to skel
+  copy:
+    src: /etc/oh-my-zsh/templates/zshrc.zsh-template 
+    dest: /etc/skel/.zshrc    
+    remote_src: yes
+  
+- name: Create a cache directory for zsh 
+  file:
+    path: /etc/skel/.oh-my-zsh/cache
+    state: directory
+    mode: '0755'
+
+- name: Changing default zsh console settings
+  lineinfile:
+    dest: /etc/skel/.zshrc
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: 'export ZSH=$HOME\/.oh-my-zsh', line: 'export ZSH=\/etc\/oh-my-zsh\nexport ZSH_CACHE_DIR=~\/.oh-my-zsh\/cache/' }
+    - { regexp: 'ZSH_THEME="robbyrussell"', line: '#ZSH_THEME="robbyrussell"\nZSH_THEME="powerlevel10k/powerlevel10k"' }
+    - { regexp: 'plugins=\(git\)', line: 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting)' }
+
+- name: Changing default console to zsh
+  lineinfile:
+    dest: /etc/default/useradd
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '\(SHELL=\/bin\/\)sh', line: '\1zsh' }
