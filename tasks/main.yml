@@ -27,18 +27,12 @@
     depth: 1
     version: master
       
-# - name: Copy default zsh rc file to skel
-#   copy:
-#     src: /etc/oh-my-zsh/templates/zshrc.zsh-template 
-#     dest: /etc/skel/.zshrc    
-#     remote_src: yes
+- name: Copy default zsh rc file to skel
+  copy:
+    src: /etc/oh-my-zsh/templates/zshrc.zsh-template 
+    dest: /home/{{ ansible_user }}/.zshrc    
+    remote_src: yes
   
-# - name: Create a cache directory for zsh 
-#   file:
-#     path: /etc/skel/.oh-my-zsh/cache
-#     state: directory
-#     mode: '0755'
-
 - name: Changing default zsh console settings
   lineinfile:
     dest: /home/{{ ansible_user }}/.zshrc
@@ -50,11 +44,3 @@
     - { regexp: 'ZSH_THEME="robbyrussell"', line: '#ZSH_THEME="robbyrussell"\nZSH_THEME="powerlevel10k/powerlevel10k"' }
     - { regexp: 'plugins=(\(.+\))', line: 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting)' }
 
-# - name: Changing default console to zsh
-#   lineinfile:
-#     dest: /etc/default/useradd
-#     state: present
-#     regexp: "{{ item.regexp }}"
-#     line: "{{ item.line }}"
-#   with_items:
-#     - { regexp: '\(SHELL=\/bin\/\)sh', line: '\1zsh' }
