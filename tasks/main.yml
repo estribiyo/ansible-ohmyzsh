@@ -26,9 +26,9 @@
     depth: 1
     version: master
 
-- name: Copy default zsh rc file to user's home
+- name: Copy default zsh rc file to /home/{{ ansible_user }}/.zshrc
   copy:
-    src: /etc/oh-my-zsh/templates/zshrc.zsh-template
+    src: /home/{{ ansible_user }}/.oh-my-zsh/templates/zshrc.zsh-template
     dest: /home/{{ ansible_user }}/.zshrc
     remote_src: yes
 
