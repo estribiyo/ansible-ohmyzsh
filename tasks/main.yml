@@ -31,6 +31,9 @@
     src: /home/{{ ansible_user }}/.oh-my-zsh/templates/zshrc.zsh-template
     dest: /home/{{ ansible_user }}/.zshrc
     remote_src: yes
+    owner: {{ ansible_user }}
+    group: {{ ansible_user }}
+    mode: '0644'
 
 - name: Changing default zsh console settings
   lineinfile:
@@ -41,4 +44,9 @@
   with_items:
     - { regexp: 'ZSH_THEME="robbyrussell"', line: "#ZSH_THEME=\"robbyrussell\"\nZSH_THEME=\"powerlevel10k/powerlevel10k\"" }
     - { regexp: 'plugins=(\(.+\))', line: "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)" }
+
+- name: Change {{ ansible_user }} shell to zsh
+  user:
+    name: "{{ ansible_user }}"
+    shell: /bin/zsh
 
