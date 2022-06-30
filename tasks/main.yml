@@ -1,3 +1,14 @@
+- name: Check for installed Oh My Zsh!
+  stat: 
+    path: /home/{{ ansible_user }}/.oh-my-zsh/README.md
+  register: readme_file
+
+- name: Delete content & directory of Oh My Zsh (not cloned from Github)
+  file:
+    state: absent
+    path: /home/{{ ansible_user }}/.oh-my-zsh
+  when: not readme_file.stat.exists
+
 - name: Install Oh My Zsh!
   git:
     repo: https://github.com/ohmyzsh/ohmyzsh.git
