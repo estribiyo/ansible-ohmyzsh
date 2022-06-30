@@ -54,7 +54,7 @@
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
   with_items:
-    - { regexp: 'ZSH_THEME="robbyrussell"', line: "#ZSH_THEME=\"robbyrussell\"\nZSH_THEME=\"powerlevel10k/powerlevel10k\"" }
+    - { regexp: '^ZSH_THEME="robbyrussell"', line: "#ZSH_THEME=\"robbyrussell\"\nZSH_THEME=\"powerlevel10k/powerlevel10k\"" }
     - { regexp: 'plugins=(\(.+\))', line: "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)" }
 
 - name: Change {{ ansible_user }} shell to zsh
