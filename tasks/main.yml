@@ -50,3 +50,10 @@
     name: "{{ ansible_user }}"
     shell: /bin/zsh
 
+- name: Bind [Home] and [End] keys
+  lineinfile:
+    dest: /home/{{ ansible_user }}/.zshrc
+    line: "{{ item }}"
+  with_items:
+    - "bindkey  \"^[[H\"   beginning-of-line"
+    - "bindkey  \"^[[F\"   end-of-line"
