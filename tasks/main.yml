@@ -1,5 +1,5 @@
 - name: Check for installed Oh My Zsh!
-  stat: 
+  stat:
     path: /home/{{ ansible_user }}/.oh-my-zsh/README.md
   register: readme_file
 
@@ -45,6 +45,7 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0644'
+  when: not readme_file.stat.exists
 
 - name: Changing default zsh console settings
   lineinfile:
