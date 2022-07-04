@@ -1,6 +1,11 @@
+- name: Check for clonned Oh My Zsh!
+  stat:
+    path: /usr/src/ohmyzsh
+  register: clonned
+
 - name: Check for installed Oh My Zsh!
   stat:
-    path: /home/{{ ansible_user }}/.oh-my-zsh/README.md
+    path: /usr/src/ohmyzsh/README.md
   register: readme_file
 
 - name: Delete content & directory of Oh My Zsh (not cloned from Github)
@@ -9,43 +14,54 @@
     path: /home/{{ ansible_user }}/.oh-my-zsh
   when: not readme_file.stat.exists
 
-- name: Install Oh My Zsh!
+- name: Clone Oh My Zsh!
   git:
     repo: https://github.com/ohmyzsh/ohmyzsh.git
-    dest: /home/{{ ansible_user }}/.oh-my-zsh
+    dest: /usr/src/ohmyzsh
     depth: 1
     version: master
 
 - name: Install Powerlevel10K for Zsh
   git:
     repo: https://github.com/romkatv/powerlevel10k.git
-    dest: /home/{{ ansible_user }}/.oh-my-zsh/custom/themes/powerlevel10k
+    dest: /usr/src/ohmyzsh/custom/themes/powerlevel10k
     depth: 1
     version: master
 
 - name: Install plugin zsh-syntax-highlighting
   git:
     repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
-    dest: /home/{{ ansible_user }}/.oh-my-zsh/plugins/zsh-syntax-highlighting
+    dest: /usr/src/ohmyzsh/plugins/zsh-syntax-highlighting
     depth: 1
     version: master
 
 - name: Install plugin zsh-autosuggestions
   git:
     repo: https://github.com/zsh-users/zsh-autosuggestions.git
-    dest: /home/{{ ansible_user }}/.oh-my-zsh/plugins/zsh-autosuggestions
+    dest: /usr/src/ohmyzsh/plugins/zsh-autosuggestions
     depth: 1
     version: master
 
+- name: Copy /usr/src/ohmyzsh to /home/{{ ansible_user }}/.oh-my-zsh
+  copy:
+    src: /usr/src/ohmyzsh
+    dest: /home/{{ ansible_user }}/.oh-my-zsh
+    remote_src: yes
+    directory_mode: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  when: not clonned.stat.exists
+
 - name: Copy default zsh rc file to /home/{{ ansible_user }}/.zshrc
   copy:
-    src: /home/{{ ansible_user }}/.oh-my-zsh/templates/zshrc.zsh-template
+    src: /usr/src/ohmyzsh/templates/zshrc.zsh-template
     dest: /home/{{ ansible_user }}/.zshrc
     remote_src: yes
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0644'
-  when: not readme_file.stat.exists
+  when: not clonned.stat.exists
 
 - name: Changing default zsh console settings
   lineinfile:
@@ -53,9 +69,10 @@
     state: present
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
+    backrefs: yes
   with_items:
-    - { regexp: '^ZSH_THEME="robbyrussell"', line: "#ZSH_THEME=\"robbyrussell\"\nZSH_THEME=\"powerlevel10k/powerlevel10k\"" }
-    - { regexp: 'plugins=(\(.+\))', line: "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)" }
+    - { regexp: "^ZSH_THEME=\"robbyrussell\"", line: "# ZSH_THEME=\"robbyrussell\"\nZSH_THEME=\"powerlevel10k/powerlevel10k\"" }
+    - { regexp: "plugins=(\\(.+\\))", line: "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)" }
 
 - name: Change {{ ansible_user }} shell to zsh
   user:
