@@ -1,0 +1,120 @@
+- name: Ensure needed packages are installed
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - zsh
+
+- name: Check for clonned Oh My Zsh!
+  stat:
+    path: /usr/src/ohmyzsh
+  register: repository
+
+- name: Check for Zsh configuration
+  stat:
+    path: "/home/{{ user.login }}/.zshrc"
+  register: configuration
+
+- name: Delete content & directory of Oh My Zsh (not cloned from Github)
+  file:
+    state: absent
+    path: "{{ item }}"
+  when: not repository.stat.exists and configuration.stat.exists
+  register: deletedprev
+  with_items:
+    - "/home/{{ user.login }}/.oh-my-zsh"
+    - "/home/{{ user.login }}/.zshrc"
+
+- name: Clone Oh My Zsh!
+  git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: /usr/src/ohmyzsh
+    depth: 1
+    version: master
+  when: not repository.stat.exists    
+
+- name: Install Powerlevel10K for Zsh
+  git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: /usr/src/ohmyzsh/custom/themes/powerlevel10k
+    depth: 1
+    version: master
+  when: not repository.stat.exists    
+
+- name: Install plugin zsh-syntax-highlighting
+  git:
+    repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+    dest: /usr/src/ohmyzsh/plugins/zsh-syntax-highlighting
+    depth: 1
+    version: master
+  when: not repository.stat.exists    
+
+- name: Install plugin zsh-autosuggestions
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dest: /usr/src/ohmyzsh/plugins/zsh-autosuggestions
+    depth: 1
+    version: master
+  when: not repository.stat.exists    
+
+- name: Synchronize /usr/src/ohmyzsh to /home/{{ user.login }}/.oh-my-zsh
+  synchronize:
+    src: /usr/src/ohmyzsh/
+    dest: "/home/{{ user.login }}/.oh-my-zsh/"
+  delegate_to: "{{ inventory_hostname }}"
+  when: not repository.stat.exists or deletedprev.changed
+
+- name: Change permissions on /home/{{ user.login }}/.oh-my-zsh to {{ user.login }}:{{ user.login }} so we can write to it
+  file:
+    path: "/home/{{ user.login }}/.oh-my-zsh"
+    owner: "{{ user.login }}"
+    # recursive if you need it
+    recurse: true
+    group: "{{ user.login }}"
+
+- name: Copy default zsh rc file to /home/{{ user.login }}/.zshrc
+  copy:
+    src: files/home/zshrc
+    dest: /home/{{ user.login }}/.zshrc
+    owner: "{{ user.login }}"
+    group: "{{ user.login }}"
+    mode: '0644'
+  when: not repository.stat.exists or not configuration.stat.exists or deletedprev.changed
+  register: newconfig
+
+- name: Changing default zsh console settings
+  lineinfile:
+    dest: /home/{{ user.login }}/.zshrc
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backrefs: yes
+  with_items:
+    - { regexp: "^ZSH_THEME=\"robbyrussell\"", line: "# ZSH_THEME=\"robbyrussell\"\nZSH_THEME=\"powerlevel10k/powerlevel10k\"" }
+    - { regexp: "plugins=(\\(.+\\))", line: "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)" }
+  when: newconfig.changed
+
+- name: Copy default .p10k.zsh file to /home/{{ user.login }}/.p10k.zsh
+  copy:
+    src: files/home/p10k.zsh
+    dest: /home/{{ user.login }}/.p10k.zsh
+    owner: "{{ user.login }}"
+    group: "{{ user.login }}"
+    mode: '0644'
+  when: not repository.stat.exists or not configuration.stat.exists or deletedprev.changed
+  register: newconfig 
+  
+- name: Change {{ user.login }} shell to zsh
+  user:
+    name: "{{ user.login }}"
+    shell: /bin/zsh
+
+- name: Bind [Home] and [End] keys
+  lineinfile:
+    dest: /home/{{ user.login }}/.zshrc
+    line: "{{ item }}"
+  with_items:
+    - "bindkey  \"^[[H\"   beginning-of-line"
+    - "bindkey  \"^[[F\"   end-of-line"
+  when: newconfig.changed
